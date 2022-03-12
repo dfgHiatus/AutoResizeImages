@@ -13,11 +13,15 @@ namespace ModNameGoesHere
     {
         [AutoRegisterConfigKey]
         public static ModConfigurationKey<int> MAX_SIZE_KEY = new ModConfigurationKey<int>("max_size", "Maximum size for Square, Power-Of-2 Textures", () => 2048);
+
+        [AutoRegisterConfigKey]
+        public static ModConfigurationKey<bool> IS_ENABLED = new ModConfigurationKey<bool>("is_enabled", "A toggle for the user, if the mod should run", () => true);
+
         public static ModConfiguration config;
 
         public override string Name => "AutoImageResize";
         public override string Author => "dfgHiatus";
-        public override string Version => "1.0.0";
+        public override string Version => "1.0.1";
         public override string Link => "https://github.com/dfgHiatus/AutoImageResize/";
         public override void OnEngineInit()
         {
@@ -32,13 +36,15 @@ namespace ModNameGoesHere
             public static bool Prefix(string path, ref Task __result, Slot targetSlot, float3? forward, StereoLayout stereoLayout, ImageProjection projection, bool setupScreenshotMetadata, bool addCollider)
             {
                 var bitmap2D = Bitmap2D.Load(path, true, true, CodeX.AlphaHandling.KeepOriginal, int.MaxValue, 1f);
-                string imgPath = Path.Combine(Engine.Current.AppPath, "nml_mods", "tmp_resize.png");
+                string imgPath = Path.Combine(Engine.Current.AppPath, "nml_mods", 
+                    $"{Path.GetFileNameWithoutExtension(path)}_resizedTo{config.GetValue(MAX_SIZE_KEY)}.png"); // or just use {Path.GetExtension(path)}
 
                 // Also don't resize a non-square image that isn't a power of 2
                 if (bitmap2D != null &&
                     bitmap2D.Size.X > config.GetValue(MAX_SIZE_KEY) &&
                     MathX.IsPowerOfTwo(bitmap2D.Size.X) &&
                     bitmap2D.Size.X == bitmap2D.Size.Y
+                    && config.GetValue(IS_ENABLED)
                     )
                 {
                     __result = targetSlot.StartTask(async delegate ()
